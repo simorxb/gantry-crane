@@ -59,7 +59,7 @@ Where:
 - **Outputs logged**: $t$, $F$, $x$, $\dot{x}$, $\theta$ (deg), written to `crane_step.csv`
 
 ## Simulink and Simscape Implementation
-The Multibody model `crane_open_loop.slx` moves in the world $XY$ plane with gravity $[0,~-g,~0]$. A rigid transform aligns the prismatic joint axis with world $X$. The revolute joint swings about world $Z$. Cart force enters through a Simulink-PS converter; position, velocity, and angle leave through PS-Simulink converters. A very light cylindrical rod is included only for animation; the ODE neglects it.
+The Multibody model `crane_open_loop.slx` moves in the world $XY$ plane with gravity $[0,~-g,~0]$. Both joints act along or about their own $Z$ axis. `RT_Rail_Align` rotates $+90°$ about $Y$, so the prismatic joint moves the cart along world $+X$. `RT_Revolute_Align` rotates $-90°$ about $Y$, undoing that rotation, so the revolute joint swings about world $+Z$. Positive $x$ and positive $\theta$ in the model therefore match the sign convention above. Cart force enters through a Simulink-PS converter; position, velocity, and angle leave through PS-Simulink converters. A very light cylindrical rod is included only for animation; the ODE neglects it.
 
 Run `run_step_response.m` to simulate both plants, export the Multibody time series, and plot force, cart velocity, and load angle with Simscape as a solid line and the ODE as a dashed line.
 
