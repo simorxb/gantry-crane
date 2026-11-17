@@ -20,7 +20,7 @@ if ~exist([model_name '.slx'], 'file')
 end
 
 %% Reference ODE (neglects visualization rod)
-[t_ode, F_ode, ~, v_ode, th_ode_deg] = crane_reference_ode( ...
+[t_ode, F_ode, x_ode, v_ode, th_ode_deg] = crane_reference_ode( ...
     M=M, m=m, L=L, b=b, c=c, g=g, F_step=F_step, t_step=t_step, t_stop=t_stop);
 
 %% Simscape Multibody simulation
@@ -56,32 +56,76 @@ Tcsv = table(t_sm, F_sm, x_sm, v_sm, th_sm_deg, ...
 writetable(Tcsv, csv_name);
 fprintf('Wrote %s (%d samples).\n', csv_name, height(Tcsv));
 
-%% Plot: F, cart velocity, theta — Simscape solid, ODE dashed
-figure('Name', 'Gantry crane open-loop step response', 'Color', 'w');
-tl = tiledlayout(3, 1, 'TileSpacing', 'compact', 'Padding', 'compact');
+%% Simscape vs ODE: largest difference on the Simscape time grid
+x_ode_i = interp1(t_ode, x_ode, t_sm);
+v_ode_i = interp1(t_ode, v_ode, t_sm);
+th_ode_i = interp1(t_ode, th_ode_deg, t_sm);
+fprintf('Max |Simscape - ODE|: x %.2e m, v %.2e m/s, theta %.2e deg\n', ...
+    max(abs(x_sm - x_ode_i)), max(abs(v_sm - v_ode_i)), max(abs(th_sm_deg - th_ode_i)));
+
+%% Figures for the README and the carousel
+imgDir = fullfile(thisDir, 'images');
+if ~exist(imgDir, 'dir')
+    mkdir(imgDir);
+end
+figPos = [100 100 1400 1000];
+fontSize = 16;
+
+% Figure 1: Simscape (solid) vs ODE (dashed) — the plant check
+fig1 = figure('Name', 'Gantry crane: Simscape vs ODE', 'Color', 'w', 'Position', figPos);
+tl = tiledlayout(3, 1, 'TileSpacing', 'compact', 'Padding', 'loose');
 
 nexttile;
-plot(t_sm, F_sm, 'b-', 'LineWidth', 1.2); hold on;
-plot(t_ode, F_ode, 'r--', 'LineWidth', 1.0);
+plot(t_sm, F_sm, 'b-', 'LineWidth', 2); hold on;
+plot(t_ode, F_ode, 'r--', 'LineWidth', 2);
 ylabel('F [N]');
 grid on;
-legend('Simscape', 'ODE', 'Location', 'best');
-title(tl, 'Open-loop gantry crane: force step response');
+lg = legend('Simscape', 'ODE');
+lg.Layout.Tile = 'east';   % outside the axes, same width for all tiles
+title(tl, 'Open-loop gantry crane: force pulse response', 'FontSize', fontSize + 2);
 
 nexttile;
-plot(t_sm, v_sm, 'b-', 'LineWidth', 1.2); hold on;
-plot(t_ode, v_ode, 'r--', 'LineWidth', 1.0);
+plot(t_sm, v_sm, 'b-', 'LineWidth', 2); hold on;
+plot(t_ode, v_ode, 'r--', 'LineWidth', 2);
 ylabel('cart velocity [m/s]');
 grid on;
 
 nexttile;
-plot(t_sm, th_sm_deg, 'b-', 'LineWidth', 1.2); hold on;
-plot(t_ode, th_ode_deg, 'r--', 'LineWidth', 1.0);
+plot(t_sm, th_sm_deg, 'b-', 'LineWidth', 2); hold on;
+plot(t_ode, th_ode_deg, 'r--', 'LineWidth', 2);
 ylabel('\theta [deg]');
 xlabel('t [s]');
 grid on;
 
-linkaxes(findall(gcf, 'Type', 'axes'), 'x');
+set(findall(fig1, 'Type', 'axes'), 'FontSize', fontSize);
+linkaxes(findall(fig1, 'Type', 'axes'), 'x');
 xlim([0 t_stop]);
+exportgraphics(fig1, fullfile(imgDir, 'simscape_vs_ode.png'), 'Resolution', 150);
 
-fprintf('Done.\n');
+% Figure 2: Simscape response only — force, cart position, load angle
+fig2 = figure('Name', 'Gantry crane: pulse response', 'Color', 'w', 'Position', figPos);
+tl2 = tiledlayout(3, 1, 'TileSpacing', 'compact', 'Padding', 'loose');
+
+nexttile;
+plot(t_sm, F_sm, 'b-', 'LineWidth', 2);
+ylabel('F [N]');
+grid on;
+title(tl2, 'Open-loop gantry crane: force pulse response', 'FontSize', fontSize + 2);
+
+nexttile;
+plot(t_sm, x_sm, 'b-', 'LineWidth', 2);
+ylabel('cart position x [m]');
+grid on;
+
+nexttile;
+plot(t_sm, th_sm_deg, 'b-', 'LineWidth', 2);
+ylabel('\theta [deg]');
+xlabel('t [s]');
+grid on;
+
+set(findall(fig2, 'Type', 'axes'), 'FontSize', fontSize);
+linkaxes(findall(fig2, 'Type', 'axes'), 'x');
+xlim([0 t_stop]);
+exportgraphics(fig2, fullfile(imgDir, 'pulse_response.png'), 'Resolution', 150);
+
+fprintf('Exported figures to %s.\nDone.\n', imgDir);
