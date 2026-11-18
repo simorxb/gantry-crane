@@ -11,15 +11,15 @@ function [t, F, x, v, theta_deg, extras] = crane_reference_ode(p)
 % Sign convention: theta = 0 hangs straight down; theta > 0 means the load
 % is on the +x side of the pivot.
 
-    arguments
+    arguments   % defaults match crane_params.m
         p.M (1,1) double = 10
         p.m (1,1) double = 2
         p.L (1,1) double = 2
-        p.b (1,1) double = 20
-        p.c (1,1) double = 0.5
+        p.b (1,1) double = 10
+        p.c (1,1) double = 0.1
         p.g (1,1) double = 9.81
         p.F_step (1,1) double = 10
-        p.t_step (1,1) double = 1
+        p.t_step (1,1) double = 3
         p.t_stop (1,1) double = 40
     end
 
